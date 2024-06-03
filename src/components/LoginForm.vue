@@ -1,14 +1,25 @@
 <script>
 import {mapState, mapActions} from 'vuex';
+import Clock from "../components/VueAnalogClock.vue";
+import {API_URL} from "../assets/const.js"
 
 export default {
   name: 'LoginForm',
+  components: {
+    Clock,
+  },
   data() {
     return {
       login: '',
       password: '',
       errorMessage: '',
-      register: true
+      register: true,
+      size: 320,
+      animate: true,
+      actualDate: new Date(),
+      myDate: new Date(),
+      enableTimeFlow: true,
+      setDateInput: ""
     };
   },
   computed: {
@@ -17,11 +28,23 @@ export default {
       return this.user.login;
     }
   },
+  mounted() {
+    let d = new Date(this.myDate);
+    d.setMilliseconds(0);
+    this.actualDate = new Date(d);
+    window.setInterval(() => {
+      this.actualDate = new Date();
+    }, 100);
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      this.$router.push('/profile');
+    }
+  },
   methods: {
     ...mapActions(['setUser']),
-    async submitForm() {
+    async loginUser() {
       try {
-        const response = await fetch('http://localhost:3000/login', {
+        const response = await fetch(`${API_URL}/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -32,15 +55,41 @@ export default {
         const data = await response.json();
 
         if (!response.ok) {
-          this.errorMessage = data.message || 'There was an error processing this image.';
+          this.errorMessage = data.message || 'There was an error processing.';
         } else {
-          this.setUser(data.user);
+          await this.setUser(data.user);
+          this.errorMessage = '';
+          this.login = '';
+          this.password = '';
+          await this.$router.push('/profile');
+
+        }
+      } catch (error) {
+        this.errorMessage = 'There was an error processing.';
+      }
+    },
+    async registerUser() {
+      try {
+        const response = await fetch(`${API_URL}/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({login: this.login, password: this.password})
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          this.errorMessage = data.message || 'There was an error processing.';
+        } else {
+          await this.setUser(data.user);
           this.errorMessage = '';
           this.login = '';
           this.password = '';
         }
       } catch (error) {
-        this.errorMessage = 'There was an error processing this image.';
+        this.errorMessage = 'There was an error processing.';
       }
     }
   }
@@ -52,21 +101,19 @@ export default {
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
     </div>
-    <form @submit.prevent="submitForm" class="fields">
+    <form @submit.prevent="loginUser()" class="fields">
       <div class="bigText">Let's record the</div>
       <div class="text-gradient">time!</div>
       <div class="watch-block">
-        <AnalogClock
-            watchFaceBackground="#673F69"
-            watchDigitsColor="#FFFFFF"
-            watchDigitsMinuteMarksColor="#FFFFFF"
-            watchHoursHand="#FFAF45"
-            watchMinutesHand="#FB6D48"
-            watchSecondsHand="#E72929"
+        <clock :size="size"
+               :auto-size="true"
+               v-model="myDate"
+               :enable-time-flow="enableTimeFlow"
+               :transition-speed="80"
         />
       </div>
-      <div class="switchText" v-if="register">Login</div>
-      <div class="switchText" v-if="!register">Registration</div>
+      <div class="bigText" v-if="register">Login</div>
+      <div class="bigText" v-if="!register">Registration</div>
       <div class="form-group">
         <div class="iconWrapper">
           <svg
@@ -99,10 +146,23 @@ export default {
         </div>
         <input type="password" id="password" v-model="password" required/>
       </div>
-      <button type="submit">Login</button>
+      <button v-if="register" @click=loginUser()>Login</button>
+      <button v-if="!register" @click=registerUser()>Registration</button>
       <div class="switchBlock">
-        <div class="switchText" v-if="register" @click="register = !register">Registration?</div>
-        <div class="switchText" v-if="!register" @click="register = !register">Login?</div>
+        <div
+            class="switchText"
+            :class="{ switchTextWhite: register, switchTextTransparent: !register }"
+            @click="register = false"
+        >
+          Registration
+        </div>
+        <div
+            class="switchText"
+            :class="{ switchTextWhite: !register, switchTextTransparent: register }"
+            @click="register = true"
+        >
+          Login
+        </div>
       </div>
     </form>
   </div>
@@ -117,7 +177,6 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 5px 9px 15px 0 rgba(0, 0, 0, 0.25);
   background: rgb(21, 37, 82);
 }
 
@@ -177,16 +236,12 @@ button {
   align-self: stretch;
   border-radius: 12px;
   color: black;
-  background: linear-gradient(45.00deg, rgb(130, 219, 247) 0%, rgb(182, 240, 156) 100%);
+  background: linear-gradient(45.00deg, rgb(187, 229, 243) 0%, rgb(206, 243, 189) 100%);
   border: none;
 }
 
 button:active {
   scale: 0.99;
-}
-
-button:hover {
-  //background: linear-gradient(45.00deg, rgb(130, 219, 247) 0%, rgb(182, 240, 156) 100%);
 }
 
 .error-message {
@@ -232,7 +287,7 @@ button:hover {
   font-size: 30px;
   font-weight: 400;
   line-height: 44px;
-  background: linear-gradient(225.00deg, rgb(68, 206, 202), rgb(37, 128, 128), rgb(70, 81, 145), rgb(135, 221, 238), rgb(182, 240, 156));
+  background: linear-gradient(225.00deg, rgb(146, 232, 229), rgb(51, 174, 174), rgb(127, 143, 232), rgb(135, 221, 238), rgb(182, 240, 156));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-size: 300% 300%;
@@ -256,26 +311,33 @@ button:hover {
 
 .switchText {
   width: 100%;
-  color: rgb(255, 255, 255);
   font-size: 30px;
   font-weight: 400;
   line-height: 44px;
   background: linear-gradient(225.00deg, rgb(68, 206, 202), rgb(37, 128, 128), rgb(70, 81, 145), rgb(135, 221, 238), rgb(182, 240, 156));
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-size: 300% 300%;
   display: inline;
 }
 
-.switchText::after {
+.switchTextTransparent {
+  -webkit-text-fill-color: transparent;
+}
+
+.switchTextWhite {
+  color: white;
+}
+
+.switchTextTransparent::after {
   content: '';
   display: block;
-  width: 50%;
+  width: 60%;
   height: 3px;
   background: linear-gradient(45deg, rgb(130, 219, 247) 0%, rgb(182, 240, 156) 100%);
-  position: absolute;
+  position: relative;
   bottom: -10px;
   transform: translateX(-50%);
   left: 50%;
 }
+
 </style>
