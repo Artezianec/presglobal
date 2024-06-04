@@ -24,7 +24,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions(['clearUser']),
+    ...mapActions(['clearUser','setUserPrice']),
     async exportXlsx() {
       try {
         const response = await fetch(`${API_URL}/workDays/exportXLSX`, {
@@ -130,6 +130,26 @@ export default {
       } catch (error) {
         this.errorMessage = 'There was an error processing this image.';
       }
+    },
+    async updatePrice() {
+      try {
+        const response = await fetch(`${API_URL}/workDays/updatePrice`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({price: this.user.price})
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          this.errorMessage = data.message || 'There was an error processing this image.';
+        } else {
+          await this.setUserPrice(data.price);
+        }
+      } catch (error) {
+        this.errorMessage = 'There was an error processing this image.';
+      }
     }
   }
 }
@@ -161,9 +181,9 @@ export default {
                 stroke="#686B6E" stroke-opacity="1.000000" stroke-width="1.500000" stroke-linejoin="round"/>
         </svg>
       </div>
-      <input placeholder="Cost per hour" type="cost" id="cost" v-model="password" required/>
+      <input :placeholder="`${user.price} $ to hour`" type="number" id="price" v-model="user.price" required/>
     </div>
-    <button @click=loginUser()>Save</button>
+    <button @click=updatePrice()>Save</button>
     <div v-if="userLogin" class="welcome-message">
       Welcome, {{ userLogin }}!
       <button class="buttonLogOut" @click="logout">Logout</button>

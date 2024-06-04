@@ -32,6 +32,10 @@ export default createStore({
         setUserOnBreak(state, onbreak) {
             state.user.onbreak = onbreak;
             localStorage.setItem('user', JSON.stringify(state.user));
+        },
+        setUserPrice(state, price) {
+            state.user.price = price;
+            localStorage.setItem('user', JSON.stringify(state.user));
         }
     },
     actions: {
@@ -52,6 +56,9 @@ export default createStore({
         },
         setUserOnBreak({commit}, onbreak) {
             commit('setUserOnBreak', onbreak);
+        },
+        setUserPrice({commit}, price) {
+            commit('setUserPrice', price);
         }
     },
     getters: {

@@ -2,6 +2,7 @@
 import {mapActions, mapState} from 'vuex';
 import {API_URL} from "@/assets/const.js";
 
+
 export default {
   name: 'ListMenu',
   components: {},
@@ -32,7 +33,9 @@ export default {
       ],
       showDialog: false,
       selectedWorkday: null,
-      years: this.generateYears()
+      years: this.generateYears(),
+      entryTime: '',
+      exitTime: '',
     };
   },
   computed: {
@@ -56,19 +59,30 @@ export default {
       const date = new Date(datetime);
       return date.toLocaleDateString();
     },
-    calculateHours(entry, exit) {
+    calculateHours(entry, exit, breaks = []) {
       if (!exit) return 'No exit';
+
       const entryDate = new Date(entry);
       const exitDate = new Date(exit);
-      const diff = Math.abs(exitDate - entryDate);
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      let totalDiff = Math.abs(exitDate - entryDate);
+
+      if (Array.isArray(breaks)) {
+        breaks.forEach(breakItem => {
+          const breakStart = new Date(breakItem.time_entry);
+          const breakEnd = new Date(breakItem.time_exit);
+          totalDiff -= Math.abs(breakEnd - breakStart);
+        });
+      }
+
+      const hours = Math.floor(totalDiff / (1000 * 60 * 60));
+      const minutes = Math.floor((totalDiff % (1000 * 60 * 60)) / (1000 * 60));
       return `${hours}:${minutes.toString().padStart(2, '0')}`;
     },
     generateYears() {
       const currentYear = new Date().getFullYear();
       const years = [];
-      for (let year = currentYear - 10; year <= currentYear; year++) {
+      for (let year = currentYear - 2; year <= currentYear; year++) {
         years.push(year);
       }
       return years;
@@ -82,9 +96,15 @@ export default {
       this.selectedWorkday = null;
     },
     calculatePrice(workday) {
-      const hours = this.calculateHours(workday.datetime_entry, workday.datetime_exit);
-      return (this.user.price * hours).toFixed(2);
+      const hours = this.calculateHours(workday.datetime_entry, workday.datetime_exit, workday.breaks);
+      const hoursAsNumber = parseFloat(hours);
+      if (isNaN(hoursAsNumber)) {
+        return 'Error';
+      }
+      return (this.user.price * hoursAsNumber).toFixed(2);
     },
+
+
     async addComment() {
       try {
         const response = await fetch(`${API_URL}/workDays/addCommentToWorkDay`, {
@@ -134,11 +154,11 @@ export default {
           Entry {{ formatTime(workday.datetime_entry) }}
           <span v-if="workday.datetime_exit"> - Exit {{ formatTime(workday.datetime_exit) }}</span>
         </div>
-        <div class="price">{{calculatePrice(workday)}}</div>
+        <div class="price">{{ calculatePrice(workday) }}</div>
       </div>
       <div class="column">
         <div class="date">{{ formatDate(workday.datetime_entry) }}</div>
-        <div class="hours">{{ calculateHours(workday.datetime_entry, workday.datetime_exit) }}</div>
+        <div class="hours">{{ calculateHours(workday.datetime_entry, workday.datetime_exit, workday.breaks) }}</div>
       </div>
     </div>
     <div class="line"/>
@@ -159,7 +179,11 @@ export default {
         </svg>
       </div>
       <div>Breaks:</div>
+      <div class="breaks" v-for="breakItem in selectedWorkday.breaks" :key="breakItem.id">
+        Entry: {{ formatTime(breakItem.time_entry) }} - Exit: {{ formatTime(breakItem.time_exit) }}
+      </div>
       <div>Edit Entry Time</div>
+
       <div>Edit exit time</div>
       <div v-if="selectedWorkday">Comment: {{ selectedWorkday.comment }}</div>
       <input placeholder="Add comment" type="text" v-model="comment" required/>

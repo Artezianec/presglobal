@@ -59,7 +59,7 @@ export default defineComponent({
     return {
       date: new Date(),
       dateTemp: new Date(),
-
+      intValTime: 1000,
       sDate: new Date(),
       eDate: new Date(),
       refreshFirstLoop: true,
@@ -79,7 +79,9 @@ export default defineComponent({
       this.startInterval();
     }
   },
-
+  mounted() {
+    this.startInterval();
+  },
   computed: {
     themeClass(): string {
       return "vue-analog-clock-" + this.theme;
@@ -177,13 +179,12 @@ export default defineComponent({
 
       this.$emit('input', this.date);
 
-      // Calculate clock size if auto-size is enabled
       if (this.autoSize && !!this.$el) {
         const myEl = this.$el;
         const myParent = myEl.parentElement;
 
         if (!myParent) {
-          throw "Clock must have a parent element when using auto-size";
+          throw new Error("Clock must have a parent element when using auto-size");
         }
 
         this.mySize = myParent.offsetWidth;

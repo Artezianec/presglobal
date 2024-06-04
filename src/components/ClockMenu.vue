@@ -78,7 +78,9 @@ export default {
         if (!response.ok) {
           this.errorMessage = data.message || 'There was an error processing.';
         } else {
-          await this.setUser(data.user);
+          this.setUserOnBreak(data.onbreak);
+          this.setWorkDay(data.onworkday);
+          this.setUserWorkdays(data.workdays);
         }
       } catch (error) {
         this.errorMessage = 'There was an error processing this image.';
@@ -137,9 +139,6 @@ export default {
     {{ errorMessage }}
   </div>
   <div class="topButtons">
-    <div class="circle">
-      +
-    </div>
     <div class="circle">
       +
     </div>
