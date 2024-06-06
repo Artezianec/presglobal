@@ -1,7 +1,8 @@
 <script>
 import {mapState, mapActions} from 'vuex';
 import Clock from "../components/VueAnalogClock.vue";
-import {API_URL} from "../assets/const.js"
+import {API_URL} from "../api/const.js"
+import {addCommentFunc, loginUser, registerUser} from "@/api/api.js";
 
 export default {
   name: 'LoginForm',
@@ -19,7 +20,8 @@ export default {
       actualDate: new Date(),
       myDate: new Date(),
       enableTimeFlow: true,
-      setDateInput: ""
+      setDateInput: "",
+      okMessage: "",
     };
   },
   computed: {
@@ -44,53 +46,20 @@ export default {
     ...mapActions(['setUser']),
     async loginUser() {
       try {
-        const response = await fetch(`${API_URL}/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({login: this.login, password: this.password})
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-          this.errorMessage = data.message || 'There was an error processing.';
-        } else {
-          await this.setUser(data.user);
-          this.errorMessage = '';
-          this.login = '';
-          this.password = '';
-          await this.$router.push('/profile');
-
-        }
+        await loginUser(this.login, this.password, this.setUser, this.$router.push);
       } catch (error) {
-        this.errorMessage = 'There was an error processing.';
+        this.errorMessage = error.message;
       }
     },
     async registerUser() {
       try {
-        const response = await fetch(`${API_URL}/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({login: this.login, password: this.password})
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-          this.errorMessage = data.message || 'There was an error processing.';
-        } else {
-          await this.setUser(data.user);
-          this.errorMessage = '';
-          this.login = '';
-          this.password = '';
-        }
+        await registerUser(this.login, this.password,this.setOkMessage);
       } catch (error) {
-        this.errorMessage = 'There was an error processing.';
+        this.errorMessage = error.message;
       }
+    },
+    setOkMessage(message) {
+      this.okMessage = message;
     }
   }
 }
@@ -101,7 +70,10 @@ export default {
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
     </div>
-    <form @submit.prevent="loginUser()" class="fields">
+    <div  class="ok-message">
+      {{ okMessage }}
+    </div>
+    <form class="fields">
       <div class="bigText">Let's record the</div>
       <div class="text-gradient">time!</div>
       <div class="watch-block">
@@ -146,8 +118,8 @@ export default {
         </div>
         <input type="password" id="password" v-model="password" required/>
       </div>
-      <button v-if="register" @click=loginUser()>Login</button>
-      <button v-if="!register" @click=registerUser()>Registration</button>
+      <button v-if="register" @click.prevent="loginUser">Login</button>
+      <button v-if="!register" @click.prevent="registerUser">Registration</button>
       <div class="switchBlock">
         <div
             class="switchText"
@@ -248,7 +220,10 @@ button:active {
   color: red;
   margin-bottom: 15px;
 }
-
+.ok-message {
+  color: green;
+  margin-bottom: 15px;
+}
 .iconWrapper {
   position: absolute;
   left: 10px;

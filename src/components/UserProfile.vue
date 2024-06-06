@@ -7,7 +7,7 @@ import SettingsIcon from '../assets/Settings.svg'
 import ClockMenu from "@/components/ClockMenu.vue";
 import ListMenu from "@/components/ListMenu.vue";
 import SettingsMenu from "@/components/SettingsMenu.vue";
-import {API_URL} from "@/assets/const.js";
+import {API_URL} from "@/api/const.js";
 
 export default {
   name: 'UserProfile',

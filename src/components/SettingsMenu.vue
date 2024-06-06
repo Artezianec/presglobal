@@ -4,7 +4,7 @@ import Clock from "@/components/VueAnalogClock.vue";
 import ClockIcon from '../assets/Clock.svg';
 import ListIcon from '../assets/List.svg';
 import SettingsIcon from '../assets/Settings.svg'
-import {API_URL} from "@/assets/const.js";
+import {API_URL} from "@/api/const.js";
 
 export default {
   name: 'SettingsMenu',

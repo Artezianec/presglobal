@@ -2,7 +2,7 @@ import {createStore} from 'vuex';
 
 const persistedUser = localStorage.getItem('user')
     ? JSON.parse(localStorage.getItem('user'))
-    : {id: null, login: '', onworkday: 0, workdays: [], onbreak: 0, price: 0};
+    : {id: null, login: '', onWorkDay: 0, workdays: [], onBreak: 0, price: 0, okMessage: ""};
 
 export default createStore({
     state: {
@@ -19,7 +19,7 @@ export default createStore({
             localStorage.removeItem('user');
         },
         setWorkDay(state, workDay) {
-            state.user.onworkday = workDay;
+            state.user.onWorkDay = workDay;
             localStorage.setItem('user', JSON.stringify(state.user));
         },
         setMenu(state, menu) {
@@ -29,8 +29,8 @@ export default createStore({
             state.user.workdays = workdays;
             localStorage.setItem('user', JSON.stringify(state.user));
         },
-        setUserOnBreak(state, onbreak) {
-            state.user.onbreak = onbreak;
+        setUserOnBreak(state, onBreak) {
+            state.user.onBreak = onBreak;
             localStorage.setItem('user', JSON.stringify(state.user));
         },
         setUserPrice(state, price) {
@@ -54,8 +54,8 @@ export default createStore({
         setUserWorkdays({commit}, workdays) {
             commit('setUserWorkdays', workdays);
         },
-        setUserOnBreak({commit}, onbreak) {
-            commit('setUserOnBreak', onbreak);
+        setUserOnBreak({commit}, onBreak) {
+            commit('setUserOnBreak', onBreak);
         },
         setUserPrice({commit}, price) {
             commit('setUserPrice', price);
@@ -65,6 +65,6 @@ export default createStore({
         userId: state => state.user.id,
         userLogin: state => state.user.login,
         menu: state => state.menu,
-        workDay: state => state.user.onworkday
+        workDay: state => state.user.onWorkDay
     }
 });

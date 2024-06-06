@@ -2,7 +2,8 @@
 import {mapActions, mapState} from 'vuex';
 import Clock from "@/components/VueAnalogClock.vue";
 import {useCurrentTime} from "../components/useCurrentTime";
-import {API_URL} from "@/assets/const.js";
+import {API_URL} from "@/api/const.js";
+import {endBreak, enterFunc, exitFunc, startBreak} from "@/api/api.js";
 
 export default {
   name: 'ClockMenu',
@@ -19,13 +20,9 @@ export default {
       login: '',
       password: '',
       errorMessage: '',
-      register: true,
       size: 320,
-      animate: true,
-      actualDate: new Date(),
       myDate: new Date(),
       enableTimeFlow: true,
-      setDateInput: "",
     };
   },
   created() {
@@ -35,97 +32,36 @@ export default {
     }
   },
   computed: {
-    ...mapState({
-      user: state => state.user,
-      menu: state => state.menu
-    }),
+    ...mapState(['user', 'menu']),
   },
   methods: {
     ...mapActions(['clearUser', 'setWorkDay', 'setUserWorkdays', 'setUser', 'setUserOnBreak']),
     async enterFunc() {
       try {
-        const formattedTime = new Date(this.currentTime).toISOString().slice(0, 19).replace('T', ' ');
-        const response = await fetch(`${API_URL}/workDays/addWorkDay`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({datetime_entry: formattedTime, datetime_exit: null})
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          this.errorMessage = data.message || 'There was an error processing.';
-        } else {
-          await this.setWorkDay(data);
-        }
+        await enterFunc(this.currentTime, this.setWorkDay);
       } catch (error) {
-        this.errorMessage = 'There was an error processing this image.';
+        this.errorMessage = error.message;
       }
     },
     async exitFunc() {
       try {
-        const formattedTime = new Date(this.currentTime).toISOString().slice(0, 19).replace('T', ' ');
-        const response = await fetch(`${API_URL}/workDays/updateDateTimeExit`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({workdayId: this.user.onworkday, datetime_exit: formattedTime})
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          this.errorMessage = data.message || 'There was an error processing.';
-        } else {
-          this.setUserOnBreak(data.onbreak);
-          this.setWorkDay(data.onworkday);
-          this.setUserWorkdays(data.workdays);
-        }
+        await exitFunc(this.currentTime, this.user, this.setUserOnBreak, this.setWorkDay, this.setUserWorkdays);
       } catch (error) {
-        this.errorMessage = 'There was an error processing this image.';
+        this.errorMessage = error.message;
       }
     },
     async startBreak() {
       try {
-        const formattedTime = new Date(this.currentTime).toISOString().slice(0, 19).replace('T', ' ');
-        const response = await fetch(`${API_URL}/workDays/addBreak`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({workdayId: this.user.onworkday, datetime_entry: formattedTime, datetime_exit: null})
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          this.errorMessage = data.message || 'There was an error processing.';
-        } else {
-          this.setUserOnBreak(data.onbreak);
-        }
+        await startBreak(this.currentTime, this.user.onWorkDay, this.setUserOnBreak);
       } catch (error) {
-        this.errorMessage = 'There was an error processing this image.';
+        this.errorMessage = error.message;
       }
     },
     async endBreak() {
       try {
-        const formattedTime = new Date(this.currentTime).toISOString().slice(0, 19).replace('T', ' ');
-        const response = await fetch(`${API_URL}/workDays/updateBreakTimeExit`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({breakId: this.user.onbreak, datetime_exit: formattedTime})
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          this.errorMessage = data.message || 'There was an error processing.';
-        } else {
-          this.setUserOnBreak(0);
-        }
+        await endBreak(this.currentTime, this.user.onBreak, this.setUserOnBreak);
       } catch (error) {
-        this.errorMessage = 'There was an error processing this image.';
+        this.errorMessage = error.message;
       }
     },
   }
@@ -155,12 +91,12 @@ export default {
     <p>{{ currentTime.toLocaleTimeString() }}</p>
     <p>{{ currentTime.toLocaleDateString() }}</p>
   </div>
-  <div v-if="user.onworkday > 0 && user.onbreak === 0" class="bigText onWork">OnWork</div>
-  <div v-if="user.onworkday > 0 && user.onbreak > 0" class="bigText onBreak">On Break</div>
-  <button v-if="user.onworkday === 0" @click="enterFunc()" class="buttonEnter">Enter</button>
-  <button v-if="user.onbreak === 0 && user.onworkday > 0" @click="startBreak()" class="buttonBreak">Break</button>
-  <button v-if="user.onbreak > 0" @click="endBreak()" class="buttonEndBreak">End Break</button>
-  <button v-if="user.onworkday > 0" @click="exitFunc()" class="buttonExit">Exit</button>
+  <div v-if="user.onWorkDay > 0 && user.onBreak === 0" class="bigText onWork">OnWork</div>
+  <div v-if="user.onWorkDay > 0 && user.onBreak > 0" class="bigText onBreak">On Break</div>
+  <button v-if="user.onWorkDay === 0" @click="enterFunc()" class="buttonEnter">Enter</button>
+  <button v-if="user.onBreak === 0 && user.onWorkDay > 0" @click="startBreak()" class="buttonBreak">Break</button>
+  <button v-if="user.onBreak > 0" @click="endBreak()" class="buttonEndBreak">End Break</button>
+  <button v-if="user.onWorkDay > 0" @click="exitFunc()" class="buttonExit">Exit</button>
 
 </template>
 
@@ -189,6 +125,7 @@ export default {
   border-radius: 12px;
   background: linear-gradient(45.00deg, rgb(130, 247, 132) 0%, rgb(162, 240, 156) 100%);
 }
+
 .buttonEndBreak {
   color: rgb(0, 0, 0);
   font-size: 26px;
@@ -216,9 +153,11 @@ export default {
 .onWork {
   color: green !important;
 }
+
 .onBreak {
- color: chocolate !important;
+  color: chocolate !important;
 }
+
 .watch-block {
   position: relative;
   max-width: 170px;

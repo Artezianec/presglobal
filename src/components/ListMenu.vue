@@ -1,6 +1,6 @@
 <script>
 import {mapActions, mapState} from 'vuex';
-import {API_URL} from "@/assets/const.js";
+import {addCommentFunc} from "@/api/api.js";
 
 
 export default {
@@ -51,6 +51,13 @@ export default {
   },
   methods: {
     ...mapActions(['clearUser']),
+    async addComment() {
+      try {
+        await addCommentFunc(this.closeDialog, this.selectedWorkday.id, this.comment);
+      } catch (error) {
+        this.errorMessage = error.message;
+      }
+    },
     formatTime(datetime) {
       const date = new Date(datetime);
       return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
@@ -92,6 +99,7 @@ export default {
       this.selectedWorkday = this.filteredWorkdays.find(workday => workday.id === workdayId);
     },
     closeDialog() {
+      this.comment = '';
       this.showDialog = false;
       this.selectedWorkday = null;
     },
@@ -102,32 +110,8 @@ export default {
         return 'Error';
       }
       return (this.user.price * hoursAsNumber).toFixed(2);
-    },
-
-
-    async addComment() {
-      try {
-        const response = await fetch(`${API_URL}/workDays/addCommentToWorkDay`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({workdayId: this.selectedWorkday.id, comment: this.comment})
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          this.errorMessage = data.message || 'There was an error processing.';
-        } else {
-          this.okMessage = data.message || 'Comment added successfully.';
-          this.closeDialog();
-          this.comment = '';
-        }
-      } catch (error) {
-        this.errorMessage = 'There was an error processing this image.';
-      }
-    },
-  },
+    }
+  }
 };
 </script>
 
